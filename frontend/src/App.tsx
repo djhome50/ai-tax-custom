@@ -9,6 +9,7 @@ import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { EntityProvider } from './contexts/EntityContext'
 import { ToastProvider } from './components/ToastProvider'
+import { CommandPalette } from './components/CommandPalette'
 
 function ProtectedRoute() {
   const token = localStorage.getItem('token')
@@ -21,6 +22,7 @@ function ProtectedRoute() {
 function App() {
   return (
     <ToastProvider>
+      <CommandPalette />
       <EntityProvider>
         <Routes>
           {/* Public routes */}
