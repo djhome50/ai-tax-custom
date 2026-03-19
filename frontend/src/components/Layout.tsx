@@ -15,6 +15,8 @@ import {
   Moon,
   Sun,
 } from 'lucide-react'
+import { EntitySelector } from './EntitySelector'
+import { Breadcrumbs } from './Breadcrumbs'
 
 interface LayoutProps {
   children: ReactNode
@@ -137,12 +139,10 @@ export default function Layout({ children }: LayoutProps) {
             <Menu className="w-5 h-5" />
           </button>
           
-          {/* Breadcrumb / Page Title */}
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold text-gray-900 hidden sm:block">
-              {navItems.find(item => location.pathname.startsWith(item.path))?.label || 'Dashboard'}
-            </h1>
-          </div>
+          {/* Entity Selector */}
+          <EntitySelector />
+          
+          <div className="flex-1" />
           
           {/* Tax Year Selector */}
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg text-sm">
@@ -245,7 +245,10 @@ export default function Layout({ children }: LayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="p-6">{children}</main>
+        <main className="p-6">
+          <Breadcrumbs />
+          {children}
+        </main>
       </div>
     </div>
   )
