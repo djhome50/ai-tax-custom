@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { 
   User, 
   Shield, 
@@ -9,9 +9,9 @@ import {
   Link2, 
   HelpCircle,
   ChevronRight,
+  ChevronDown,
   FileText,
 } from 'lucide-react'
-import { useToast } from '../components/ToastProvider'
 import { LoadingButton } from '../components/Loading'
 
 const settingsSections = [
@@ -67,10 +67,22 @@ const settingsSections = [
 
 export default function Settings() {
   const [activeSection, setActiveSection] = useState('profile')
-  const toast = useToast()
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   
   // Get user from localStorage
   const user = JSON.parse(localStorage.getItem('user') || '{}')
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const renderContent = () => {
     switch (activeSection) {
@@ -97,6 +109,11 @@ export default function Settings() {
 
   const activeSectionData = settingsSections.find(s => s.id === activeSection)
 
+  const handleSelectSection = (sectionId: string) => {
+    setActiveSection(sectionId)
+    setIsDropdownOpen(false)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -105,9 +122,56 @@ export default function Settings() {
         <p className="text-sm text-gray-500 mt-1">Manage your account and application preferences</p>
       </div>
 
-      <div className="flex gap-6">
-        {/* Sidebar Navigation */}
-        <div className="w-64 flex-shrink-0">
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Mobile Dropdown Navigation */}
+        <div className="lg:hidden" ref={dropdownRef}>
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-lg shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              {activeSectionData && (
+                <>
+                  <activeSectionData.icon className="w-5 h-5 text-indigo-600" />
+                  <span className="font-medium text-gray-900">{activeSectionData.label}</span>
+                </>
+              )}
+            </div>
+            <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+          
+          {isDropdownOpen && (
+            <div className="absolute z-50 mt-2 w-full max-w-xs bg-white rounded-lg shadow-lg border border-gray-200 py-2">
+              {settingsSections.map((section) => {
+                const Icon = section.icon
+                const isActive = activeSection === section.id
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => handleSelectSection(section.id)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                      isActive
+                        ? 'bg-indigo-50 text-indigo-700'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-gray-400'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-medium text-sm ${isActive ? 'text-indigo-900' : ''}`}>
+                        {section.label}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">{section.description}</p>
+                    </div>
+                    {isActive && <ChevronRight className="w-4 h-4 text-indigo-400" />}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Sidebar Navigation */}
+        <div className="hidden lg:block w-64 flex-shrink-0">
           <nav className="space-y-1">
             {settingsSections.map((section) => {
               const Icon = section.icon
