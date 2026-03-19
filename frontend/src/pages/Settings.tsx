@@ -12,6 +12,7 @@ import {
   ChevronDown,
   FileText,
 } from 'lucide-react'
+import { useToast } from '../components/ToastProvider'
 import { LoadingButton } from '../components/Loading'
 
 const settingsSections = [
