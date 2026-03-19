@@ -3,9 +3,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { UserPlus, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import api from '../lib/api';
+import { useToast } from '../components/ToastProvider';
 
 export function Register() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -18,11 +20,13 @@ export function Register() {
       return response.data;
     },
     onSuccess: () => {
-      // Auto-login after registration
-      loginMutation.mutate({ email, password });
+      toast.showToast('Account created! Please log in.', 'success');
+      navigate('/login');
     },
     onError: (err: any) => {
-      setError(err.response?.data?.detail || 'Registration failed');
+      const message = err.response?.data?.detail || 'Registration failed';
+      setError(message);
+      toast.showToast(message, 'error');
     },
   });
 

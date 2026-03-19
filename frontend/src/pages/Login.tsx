@@ -3,9 +3,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 import api from '../lib/api';
+import { useToast } from '../components/ToastProvider';
 
 export function Login() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -22,10 +24,13 @@ export function Login() {
       api.get('/auth/me').then((res) => {
         localStorage.setItem('user', JSON.stringify(res.data));
       });
+      toast.showToast('Welcome back!', 'success');
       navigate('/');
     },
     onError: (err: any) => {
-      setError(err.response?.data?.detail || 'Login failed');
+      const message = err.response?.data?.detail || 'Login failed';
+      setError(message);
+      toast.showToast(message, 'error');
     },
   });
 

@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Plus, Building2, Trash2, ArrowRight, X, FileText } from 'lucide-react'
 import { entityApi } from '../lib/api'
+import { useToast } from '../components/ToastProvider'
+import { Loading, LoadingButton } from '../components/Loading'
 
 const ENTITY_TYPES = [
   { value: 'sole_proprietorship', label: 'Sole Proprietorship', form: 'Schedule C' },
@@ -31,6 +33,7 @@ export default function Entities() {
   })
 
   const queryClient = useQueryClient()
+  const toast = useToast()
 
   const { data: entities, isLoading } = useQuery({
     queryKey: ['entities'],
@@ -54,6 +57,10 @@ export default function Entities() {
         state: '',
         zip_code: '',
       })
+      toast.showToast('Entity created successfully', 'success')
+    },
+    onError: (error: any) => {
+      toast.showToast(error.response?.data?.detail || 'Failed to create entity', 'error')
     },
   })
 
@@ -61,6 +68,10 @@ export default function Entities() {
     mutationFn: (id: number) => entityApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entities'] })
+      toast.showToast('Entity deleted', 'success')
+    },
+    onError: (error: any) => {
+      toast.showToast(error.response?.data?.detail || 'Failed to delete entity', 'error')
     },
   })
 
@@ -72,11 +83,7 @@ export default function Entities() {
   const selectedType = ENTITY_TYPES.find(t => t.value === formData.entity_type)
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-      </div>
-    )
+    return <Loading message="Loading entities..." />
   }
 
   const entityCount = entities?.data?.length || 0
@@ -267,13 +274,9 @@ export default function Entities() {
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={createMutation.isPending || !formData.name}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {createMutation.isPending ? 'Creating...' : 'Create Entity'}
-                </button>
+                <LoadingButton loading={createMutation.isPending} disabled={!formData.name}>
+                  Create Entity
+                </LoadingButton>
               </div>
             </form>
           </div>

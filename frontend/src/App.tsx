@@ -8,6 +8,7 @@ import Settings from './pages/Settings'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { EntityProvider } from './contexts/EntityContext'
+import { ToastProvider } from './components/ToastProvider'
 
 function ProtectedRoute() {
   const token = localStorage.getItem('token')
@@ -19,25 +20,27 @@ function ProtectedRoute() {
 
 function App() {
   return (
-    <EntityProvider>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        
-        {/* Protected routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<Layout><Outlet /></Layout>}>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/entities" element={<Entities />} />
-            <Route path="/entities/:entityId/transactions" element={<Transactions />} />
-            <Route path="/entities/:entityId/forms" element={<TaxForms />} />
-            <Route path="/settings" element={<Settings />} />
+    <ToastProvider>
+      <EntityProvider>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          
+          {/* Protected routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Layout><Outlet /></Layout>}>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/entities" element={<Entities />} />
+              <Route path="/entities/:entityId/transactions" element={<Transactions />} />
+              <Route path="/entities/:entityId/forms" element={<TaxForms />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
           </Route>
-        </Route>
-      </Routes>
-    </EntityProvider>
+        </Routes>
+      </EntityProvider>
+    </ToastProvider>
   )
 }
 
