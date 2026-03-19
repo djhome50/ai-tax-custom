@@ -2,6 +2,7 @@
 Database Models
 """
 
+from app.models.user import User
 from app.models.entity import Entity, EntityType, FilingStatus, AccountingMethod
 from app.models.transaction import (
     Transaction,
@@ -21,6 +22,8 @@ from app.models.form import (
 )
 
 __all__ = [
+    # User
+    "User",
     # Entity
     "Entity",
     "EntityType",

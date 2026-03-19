@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
-from app.models import Entity, EntityType
+from app.models import Entity, EntityType, User
 
 router = APIRouter(prefix="/entities", tags=["Entities"])
 
@@ -45,6 +45,7 @@ class EntityUpdate(BaseModel):
 
 class EntityResponse(BaseModel):
     id: int
+    user_id: int
     name: str
     entity_type: str
     ein: Optional[str]
@@ -60,10 +61,11 @@ class EntityResponse(BaseModel):
 async def create_entity(
     data: EntityCreate,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> Entity:
     """Create a new tax entity"""
     entity = Entity(
+        user_id=user.id,
         name=data.name,
         entity_type=data.entity_type,
         ein=data.ein,
@@ -76,17 +78,18 @@ async def create_entity(
         zip_code=data.zip_code,
     )
     db.add(entity)
-    await db.flush()
+    await db.commit()
+    await db.refresh(entity)
     return entity
 
 
 @router.get("/", response_model=list[EntityResponse])
 async def list_entities(
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> list[Entity]:
-    """List all entities"""
-    stmt = select(Entity).order_by(Entity.created_at.desc())
+    """List all entities for current user"""
+    stmt = select(Entity).where(Entity.user_id == user.id).order_by(Entity.created_at.desc())
     result = await db.execute(stmt)
     return list(result.scalars().all())
 
@@ -95,10 +98,10 @@ async def list_entities(
 async def get_entity(
     entity_id: int,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> Entity:
     """Get entity by ID"""
-    stmt = select(Entity).where(Entity.id == entity_id)
+    stmt = select(Entity).where(Entity.id == entity_id, Entity.user_id == user.id)
     result = await db.execute(stmt)
     entity = result.scalar_one_or_none()
     
@@ -116,10 +119,10 @@ async def update_entity(
     entity_id: int,
     data: EntityUpdate,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> Entity:
     """Update entity"""
-    stmt = select(Entity).where(Entity.id == entity_id)
+    stmt = select(Entity).where(Entity.id == entity_id, Entity.user_id == user.id)
     result = await db.execute(stmt)
     entity = result.scalar_one_or_none()
     
@@ -133,6 +136,8 @@ async def update_entity(
     for key, value in update_data.items():
         setattr(entity, key, value)
     
+    await db.commit()
+    await db.refresh(entity)
     return entity
 
 
@@ -140,10 +145,10 @@ async def update_entity(
 async def delete_entity(
     entity_id: int,
     db: AsyncSession = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> None:
     """Delete entity"""
-    stmt = select(Entity).where(Entity.id == entity_id)
+    stmt = select(Entity).where(Entity.id == entity_id, Entity.user_id == user.id)
     result = await db.execute(stmt)
     entity = result.scalar_one_or_none()
     
@@ -154,3 +159,4 @@ async def delete_entity(
         )
     
     await db.delete(entity)
+    await db.commit()

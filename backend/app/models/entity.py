@@ -52,6 +52,9 @@ class Entity(Base):
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     
+    # Owner (multi-tenancy)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    
     # Basic info
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     entity_type: Mapped[EntityType] = mapped_column(

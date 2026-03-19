@@ -1,14 +1,19 @@
-import { ReactNode, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { ReactNode, useState, useRef, useEffect } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   Building2,
-  Receipt,
-  FileText,
   Settings,
   Menu,
   X,
   Calculator,
+  User,
+  LogOut,
+  ChevronDown,
+  Bell,
+  HelpCircle,
+  Moon,
+  Sun,
 } from 'lucide-react'
 
 interface LayoutProps {
@@ -23,10 +28,43 @@ const navItems = [
 
 export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
+  const profileRef = useRef<HTMLDivElement>(null)
+  const notificationsRef = useRef<HTMLDivElement>(null)
   const location = useLocation()
+  const navigate = useNavigate()
+  
+  // Get user from localStorage
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const userEmail = user.email || 'user@example.com'
+  const userName = user.full_name || userEmail.split('@')[0]
+  const userInitials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileOpen(false)
+      }
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user')
+    navigate('/login')
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen bg-gray-50 ${darkMode ? 'dark' : ''}`}>
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -43,7 +81,7 @@ export default function Layout({ children }: LayoutProps) {
       >
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
           <Link to="/" className="flex items-center gap-2">
-            <Calculator className="w-6 h-6 text-primary-600" />
+            <Calculator className="w-6 h-6 text-indigo-600" />
             <span className="font-semibold text-lg">AI Tax</span>
           </Link>
           <button
@@ -64,7 +102,7 @@ export default function Layout({ children }: LayoutProps) {
                 to={item.path}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-primary-50 text-primary-700'
+                    ? 'bg-indigo-50 text-indigo-700'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
                 onClick={() => setSidebarOpen(false)}
@@ -75,21 +113,134 @@ export default function Layout({ children }: LayoutProps) {
             )
           })}
         </nav>
+        
+        {/* Sidebar footer with help */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+          <Link
+            to="/settings"
+            className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            <HelpCircle className="w-5 h-5" />
+            Help & Support
+          </Link>
+        </div>
       </aside>
 
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Header */}
-        <header className="sticky top-0 z-30 h-16 bg-white border-b border-gray-200 flex items-center px-4">
+        <header className="sticky top-0 z-30 h-16 bg-white border-b border-gray-200 flex items-center px-4 gap-4">
           <button
             className="lg:hidden p-2 -ml-2"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex-1" />
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">Tax Year 2024</span>
+          
+          {/* Breadcrumb / Page Title */}
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold text-gray-900 hidden sm:block">
+              {navItems.find(item => location.pathname.startsWith(item.path))?.label || 'Dashboard'}
+            </h1>
+          </div>
+          
+          {/* Tax Year Selector */}
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg text-sm">
+            <span className="text-gray-600">Tax Year</span>
+            <select className="bg-transparent font-medium text-gray-900 focus:outline-none cursor-pointer">
+              <option>2024</option>
+              <option>2023</option>
+              <option>2022</option>
+            </select>
+          </div>
+          
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Toggle dark mode"
+          >
+            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+          
+          {/* Notifications */}
+          <div className="relative" ref={notificationsRef}>
+            <button
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+            </button>
+            
+            {notificationsOpen && (
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                <div className="px-4 py-2 border-b border-gray-100">
+                  <h3 className="font-semibold text-gray-900">Notifications</h3>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
+                    <p className="text-sm font-medium text-gray-900">Welcome to AI Tax!</p>
+                    <p className="text-xs text-gray-500 mt-1">Get started by creating your first entity</p>
+                  </div>
+                </div>
+                <div className="px-4 py-2 border-t border-gray-100">
+                  <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+                    View all notifications
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Profile Dropdown */}
+          <div className="relative" ref={profileRef}>
+            <button
+              onClick={() => setProfileOpen(!profileOpen)}
+              className="flex items-center gap-2 p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-medium">{userInitials}</span>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {profileOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                <div className="px-4 py-2 border-b border-gray-100">
+                  <p className="font-medium text-gray-900 truncate">{userName}</p>
+                  <p className="text-sm text-gray-500 truncate">{userEmail}</p>
+                </div>
+                
+                <Link
+                  to="/settings"
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  onClick={() => setProfileOpen(false)}
+                >
+                  <User className="w-4 h-4" />
+                  Profile Settings
+                </Link>
+                
+                <Link
+                  to="/settings"
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  onClick={() => setProfileOpen(false)}
+                >
+                  <Settings className="w-4 h-4" />
+                  Preferences
+                </Link>
+                
+                <hr className="my-2" />
+                
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign out
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
