@@ -18,7 +18,12 @@ if TYPE_CHECKING:
 
 
 class EntityType(str, Enum):
-    """Business entity types"""
+    """Entity types for both business and individual taxpayers"""
+    # Individual types
+    INDIVIDUAL = "individual"
+    INDIVIDUAL_WITH_BUSINESS = "individual_with_business"  # Individual with Schedule C/F
+    
+    # Business types
     SOLE_PROPRIETORSHIP = "sole_proprietorship"
     SINGLE_MEMBER_LLC = "single_member_llc"
     PARTNERSHIP = "partnership"
@@ -119,6 +124,10 @@ class Entity(Base):
     def default_tax_form(self) -> str:
         """Get default tax form based on entity type"""
         form_map = {
+            # Individual types
+            EntityType.INDIVIDUAL: "Form 1040",
+            EntityType.INDIVIDUAL_WITH_BUSINESS: "Form 1040 + Schedule C",
+            # Business types
             EntityType.SOLE_PROPRIETORSHIP: "Schedule C",
             EntityType.SINGLE_MEMBER_LLC: "Schedule C",
             EntityType.PARTNERSHIP: "Form 1065",
@@ -128,4 +137,9 @@ class Entity(Base):
             EntityType.LLC_S_CORP: "Form 1120-S",
             EntityType.LLC_C_CORP: "Form 1120",
         }
-        return form_map.get(self.entity_type, "Schedule C")
+        return form_map.get(self.entity_type, "Form 1040")
+    
+    @property
+    def is_individual(self) -> bool:
+        """Check if entity is an individual taxpayer"""
+        return self.entity_type in (EntityType.INDIVIDUAL, EntityType.INDIVIDUAL_WITH_BUSINESS)

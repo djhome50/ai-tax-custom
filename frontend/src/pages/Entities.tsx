@@ -7,14 +7,18 @@ import { useToast } from '../components/ToastProvider'
 import { Loading, LoadingButton } from '../components/Loading'
 
 const ENTITY_TYPES = [
-  { value: 'sole_proprietorship', label: 'Sole Proprietorship', form: 'Schedule C' },
-  { value: 'single_member_llc', label: 'Single Member LLC', form: 'Schedule C' },
-  { value: 'partnership', label: 'Partnership', form: 'Form 1065' },
-  { value: 's_corp', label: 'S-Corp', form: 'Form 1120-S' },
-  { value: 'c_corp', label: 'C-Corp', form: 'Form 1120' },
-  { value: 'llc_partnership', label: 'LLC (Partnership)', form: 'Form 1065' },
-  { value: 'llc_s_corp', label: 'LLC (S-Corp)', form: 'Form 1120-S' },
-  { value: 'llc_c_corp', label: 'LLC (C-Corp)', form: 'Form 1120' },
+  // Individual types
+  { value: 'individual', label: 'Individual', form: 'Form 1040', category: 'individual' },
+  { value: 'individual_with_business', label: 'Individual with Business', form: 'Form 1040 + Schedule C', category: 'individual' },
+  // Business types
+  { value: 'sole_proprietorship', label: 'Sole Proprietorship', form: 'Schedule C', category: 'business' },
+  { value: 'single_member_llc', label: 'Single Member LLC', form: 'Schedule C', category: 'business' },
+  { value: 'partnership', label: 'Partnership', form: 'Form 1065', category: 'business' },
+  { value: 's_corp', label: 'S-Corp', form: 'Form 1120-S', category: 'business' },
+  { value: 'c_corp', label: 'C-Corp', form: 'Form 1120', category: 'business' },
+  { value: 'llc_partnership', label: 'LLC (Partnership)', form: 'Form 1065', category: 'business' },
+  { value: 'llc_s_corp', label: 'LLC (S-Corp)', form: 'Form 1120-S', category: 'business' },
+  { value: 'llc_c_corp', label: 'LLC (C-Corp)', form: 'Form 1120', category: 'business' },
 ]
 
 export default function Entities() {
@@ -115,7 +119,7 @@ export default function Entities() {
             <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Create New Entity</h2>
-                <p className="text-sm text-gray-500">Add a business entity for tax tracking</p>
+                <p className="text-sm text-gray-500">Add an individual or business entity for tax tracking</p>
               </div>
               <button
                 onClick={() => setShowForm(false)}
@@ -130,22 +134,49 @@ export default function Entities() {
               {/* Entity Type Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">Entity Type</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {ENTITY_TYPES.map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, entity_type: type.value })}
-                      className={`p-3 rounded-lg border-2 text-left transition-all ${
-                        formData.entity_type === type.value
-                          ? 'border-indigo-600 bg-indigo-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <p className="font-medium text-sm text-gray-900">{type.label}</p>
-                      <p className="text-xs text-gray-500 mt-1">{type.form}</p>
-                    </button>
-                  ))}
+                
+                {/* Individual Types */}
+                <div className="mb-4">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Individual</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {ENTITY_TYPES.filter(t => t.category === 'individual').map((type) => (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, entity_type: type.value })}
+                        className={`p-3 rounded-lg border-2 text-left transition-all ${
+                          formData.entity_type === type.value
+                            ? 'border-indigo-600 bg-indigo-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <p className="font-medium text-sm text-gray-900">{type.label}</p>
+                        <p className="text-xs text-gray-500 mt-1">{type.form}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Business Types */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Business</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {ENTITY_TYPES.filter(t => t.category === 'business').map((type) => (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, entity_type: type.value })}
+                        className={`p-3 rounded-lg border-2 text-left transition-all ${
+                          formData.entity_type === type.value
+                            ? 'border-indigo-600 bg-indigo-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <p className="font-medium text-sm text-gray-900">{type.label}</p>
+                        <p className="text-xs text-gray-500 mt-1">{type.form}</p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -153,38 +184,42 @@ export default function Entities() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Entity Name <span className="text-red-500">*</span>
+                    {ENTITY_TYPES.find(t => t.value === formData.entity_type)?.category === 'individual' ? 'Full Name' : 'Entity Name'} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g., My Business LLC"
+                    placeholder={ENTITY_TYPES.find(t => t.value === formData.entity_type)?.category === 'individual' ? 'e.g., John Smith' : 'e.g., My Business LLC'}
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Business Name (DBA)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {ENTITY_TYPES.find(t => t.value === formData.entity_type)?.category === 'individual' ? 'SSN (optional)' : 'Business Name (DBA)'}
+                  </label>
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     value={formData.business_name}
                     onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
-                    placeholder="Doing Business As"
+                    placeholder={ENTITY_TYPES.find(t => t.value === formData.entity_type)?.category === 'individual' ? 'XXX-XX-XXXX' : 'Doing Business As'}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">EIN</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {ENTITY_TYPES.find(t => t.value === formData.entity_type)?.category === 'individual' ? 'SSN' : 'EIN'}
+                  </label>
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     value={formData.ein}
                     onChange={(e) => setFormData({ ...formData, ein: e.target.value })}
-                    placeholder="XX-XXXXXXX"
+                    placeholder={ENTITY_TYPES.find(t => t.value === formData.entity_type)?.category === 'individual' ? 'XXX-XX-XXXX' : 'XX-XXXXXXX'}
                   />
                 </div>
                 <div>
