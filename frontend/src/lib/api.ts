@@ -36,42 +36,42 @@ export default api
 
 // Entity API
 export const entityApi = {
-  list: () => api.get<Entity[]>('/entities'),
-  get: (id: number) => api.get<Entity>(`/entities/${id}`),
-  create: (data: Partial<Entity>) => api.post<Entity>('/entities', data),
-  update: (id: number, data: Partial<Entity>) => api.patch<Entity>(`/entities/${id}`, data),
-  delete: (id: number) => api.delete(`/entities/${id}`),
+  list: () => api.get<Entity[]>('/entities/'),
+  get: (id: number) => api.get<Entity>(`/entities/${id}/`),
+  create: (data: Partial<Entity>) => api.post<Entity>('/entities/', data),
+  update: (id: number, data: Partial<Entity>) => api.patch<Entity>(`/entities/${id}/`, data),
+  delete: (id: number) => api.delete(`/entities/${id}/`),
 }
 
 // Transaction API
 export const transactionApi = {
   list: (entityId: number, params?: Record<string, unknown>) =>
-    api.get<Transaction[]>('/transactions', { params: { entity_id: entityId, ...params } }),
-  get: (id: number) => api.get<Transaction>(`/transactions/${id}`),
+    api.get<Transaction[]>('/transactions/', { params: { entity_id: entityId, ...params } }),
+  get: (id: number) => api.get<Transaction>(`/transactions/${id}/`),
   importFile: (entityId: number, file: File) => {
     const formData = new FormData()
     formData.append('file', file)
-    return api.post<TransactionImport>('/transactions/import/file', formData, {
+    return api.post<TransactionImport>('/transactions/import/file/', formData, {
       params: { entity_id: entityId },
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   },
   importData: (entityId: number, data: unknown) =>
-    api.post<TransactionImport>('/transactions/import/data', data, {
+    api.post<TransactionImport>('/transactions/import/data/', data, {
       params: { entity_id: entityId },
     }),
-  classify: (id: number) => api.post<Transaction>(`/transactions/${id}/classify`),
+  classify: (id: number) => api.post<Transaction>(`/transactions/${id}/classify/`),
   classifyPending: (entityId: number, limit?: number) =>
-    api.post('/transactions/classify/pending', null, {
+    api.post('/transactions/classify/pending/', null, {
       params: { entity_id: entityId, limit },
     }),
   reclassify: (id: number, category: string, taxCategory: string) =>
-    api.post<Transaction>(`/transactions/${id}/reclassify`, {
+    api.post<Transaction>(`/transactions/${id}/reclassify/`, {
       category,
       tax_category: taxCategory,
     }),
   summary: (entityId: number, taxYear?: number) =>
-    api.get<TransactionSummary>(`/transactions/summary/${entityId}`, {
+    api.get<TransactionSummary>(`/transactions/summary/${entityId}/`, {
       params: { tax_year: taxYear },
     }),
 }
