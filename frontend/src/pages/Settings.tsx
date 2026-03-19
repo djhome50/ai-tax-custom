@@ -136,7 +136,7 @@ export default function Settings() {
         <ChevronRight className="w-4 h-4 text-gray-400" />
         
         {/* Section Dropdown */}
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative" ref={breadcrumbDropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center gap-1 font-medium text-gray-900 hover:text-indigo-600 transition-colors"
