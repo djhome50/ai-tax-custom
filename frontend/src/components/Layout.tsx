@@ -14,6 +14,7 @@ import {
   HelpCircle,
   Moon,
   Sun,
+  Search,
 } from 'lucide-react'
 import { EntitySelector } from './EntitySelector'
 import { Breadcrumbs } from './Breadcrumbs'
@@ -141,6 +142,25 @@ export default function Layout({ children }: LayoutProps) {
           
           {/* Entity Selector */}
           <EntitySelector />
+          
+          {/* Search Button */}
+          <button
+            onClick={() => {
+              const event = new KeyboardEvent('keydown', {
+                key: 'k',
+                metaKey: navigator.platform.includes('Mac'),
+                ctrlKey: !navigator.platform.includes('Mac'),
+              })
+              document.dispatchEvent(event)
+            }}
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-600 transition-colors"
+          >
+            <Search className="w-4 h-4" />
+            <span>Search</span>
+            <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-white rounded text-xs text-gray-400 font-mono">
+              {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}K
+            </kbd>
+          </button>
           
           <div className="flex-1" />
           
