@@ -1,95 +1,537 @@
-import { Settings as SettingsIcon, Key, Database, Bell } from 'lucide-react'
+import { useState } from 'react'
+import { 
+  User, 
+  Shield, 
+  Key, 
+  Database, 
+  Bell, 
+  CreditCard, 
+  Link2, 
+  HelpCircle,
+  ChevronRight,
+  FileText,
+} from 'lucide-react'
+import { useToast } from '../components/ToastProvider'
+import { LoadingButton } from '../components/Loading'
+
+const settingsSections = [
+  { 
+    id: 'profile', 
+    label: 'Profile', 
+    icon: User, 
+    description: 'Personal information and preferences' 
+  },
+  { 
+    id: 'account', 
+    label: 'Account', 
+    icon: Shield, 
+    description: 'Security and account settings' 
+  },
+  { 
+    id: 'ai', 
+    label: 'AI Provider', 
+    icon: Key, 
+    description: 'Configure AI classification provider' 
+  },
+  { 
+    id: 'tax', 
+    label: 'Tax Preferences', 
+    icon: FileText, 
+    description: 'Default tax settings and forms' 
+  },
+  { 
+    id: 'notifications', 
+    label: 'Notifications', 
+    icon: Bell, 
+    description: 'Email and push notifications' 
+  },
+  { 
+    id: 'integrations', 
+    label: 'Integrations', 
+    icon: Link2, 
+    description: 'Connect external services' 
+  },
+  { 
+    id: 'billing', 
+    label: 'Billing', 
+    icon: CreditCard, 
+    description: 'Subscription and payment methods' 
+  },
+  { 
+    id: 'help', 
+    label: 'Help & Support', 
+    icon: HelpCircle, 
+    description: 'Documentation and support' 
+  },
+]
 
 export default function Settings() {
+  const [activeSection, setActiveSection] = useState('profile')
+  const toast = useToast()
+  
+  // Get user from localStorage
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'profile':
+        return <ProfileSettings user={user} />
+      case 'account':
+        return <AccountSettings />
+      case 'ai':
+        return <AIProviderSettings />
+      case 'tax':
+        return <TaxPreferencesSettings />
+      case 'notifications':
+        return <NotificationSettings />
+      case 'integrations':
+        return <IntegrationsSettings />
+      case 'billing':
+        return <BillingSettings />
+      case 'help':
+        return <HelpSettings />
+      default:
+        return <ProfileSettings user={user} />
+    }
+  }
+
+  const activeSectionData = settingsSections.find(s => s.id === activeSection)
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Settings</h1>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+        <p className="text-sm text-gray-500 mt-1">Manage your account and application preferences</p>
+      </div>
 
-      {/* AI Provider Settings */}
-      <div className="card">
-        <div className="flex items-center gap-3 mb-4">
-          <Key className="w-5 h-5 text-gray-600" />
-          <h2 className="text-lg font-semibold">AI Provider</h2>
+      <div className="flex gap-6">
+        {/* Sidebar Navigation */}
+        <div className="w-64 flex-shrink-0">
+          <nav className="space-y-1">
+            {settingsSections.map((section) => {
+              const Icon = section.icon
+              const isActive = activeSection === section.id
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                    isActive
+                      ? 'bg-indigo-50 text-indigo-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-gray-400'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-medium text-sm ${isActive ? 'text-indigo-900' : ''}`}>
+                      {section.label}
+                    </p>
+                  </div>
+                  {isActive && <ChevronRight className="w-4 h-4 text-indigo-400" />}
+                </button>
+              )
+            })}
+          </nav>
         </div>
-        <div className="space-y-4">
-          <div>
-            <label className="label">Provider</label>
-            <select className="input">
-              <option value="openai">OpenAI</option>
-              <option value="anthropic">Anthropic</option>
-            </select>
+
+        {/* Content Area */}
+        <div className="flex-1 min-w-0">
+          {/* Section Header */}
+          <div className="bg-white rounded-xl border border-gray-200 mb-6">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                {activeSectionData && (
+                  <>
+                    <activeSectionData.icon className="w-6 h-6 text-indigo-600" />
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        {activeSectionData.label}
+                      </h2>
+                      <p className="text-sm text-gray-500">{activeSectionData.description}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            
+            {/* Section Content */}
+            <div className="p-6">
+              {renderContent()}
+            </div>
           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Profile Settings Component
+function ProfileSettings({ user }: { user: any }) {
+  const [fullName, setFullName] = useState(user.full_name || '')
+  const [email, setEmail] = useState(user.email || '')
+  const toast = useToast()
+
+  return (
+    <div className="space-y-6">
+      {/* Avatar */}
+      <div className="flex items-center gap-4">
+        <div className="w-20 h-20 bg-indigo-600 rounded-full flex items-center justify-center">
+          <span className="text-2xl font-medium text-white">
+            {(fullName || email).split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+          </span>
+        </div>
+        <div>
+          <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+            Change avatar
+          </button>
+          <p className="text-xs text-gray-500 mt-1">JPG, PNG or GIF. Max 2MB</p>
+        </div>
+      </div>
+
+      {/* Form */}
+      <div className="grid gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+          <input
+            type="text"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+          <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            <option>America/New_York (EST)</option>
+            <option>America/Chicago (CST)</option>
+            <option>America/Denver (MST)</option>
+            <option>America/Los_Angeles (PST)</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-gray-100">
+        <LoadingButton loading={false} onClick={() => toast.showToast('Profile updated', 'success')}>
+          Save Changes
+        </LoadingButton>
+      </div>
+    </div>
+  )
+}
+
+// Account Settings Component
+function AccountSettings() {
+  return (
+    <div className="space-y-6">
+      {/* Password */}
+      <div>
+        <h3 className="font-medium text-gray-900 mb-4">Password</h3>
+        <div className="grid gap-4">
           <div>
-            <label className="label">API Key</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
             <input
               type="password"
-              className="input"
-              placeholder="Enter your API key"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
-          </div>
-          <button className="btn btn-primary">Save</button>
-        </div>
-      </div>
-
-      {/* Classification Settings */}
-      <div className="card">
-        <div className="flex items-center gap-3 mb-4">
-          <Database className="w-5 h-5 text-gray-600" />
-          <h2 className="text-lg font-semibold">Classification</h2>
-        </div>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Auto-classify on import</p>
-              <p className="text-sm text-gray-600">
-                Automatically classify transactions when importing
-              </p>
-            </div>
-            <input type="checkbox" className="w-5 h-5" defaultChecked />
           </div>
           <div>
-            <label className="label">Confidence Threshold</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+            <input
+              type="password"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+            <input
+              type="password"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+        </div>
+        <button className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+          Update Password
+        </button>
+      </div>
+
+      {/* Two-Factor Auth */}
+      <div className="pt-6 border-t border-gray-100">
+        <h3 className="font-medium text-gray-900 mb-4">Two-Factor Authentication</h3>
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div>
+            <p className="font-medium text-gray-900">Enable 2FA</p>
+            <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
+          </div>
+          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
+            Enable
+          </button>
+        </div>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="pt-6 border-t border-gray-100">
+        <h3 className="font-medium text-red-600 mb-4">Danger Zone</h3>
+        <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-red-900">Delete Account</p>
+              <p className="text-sm text-red-700">Permanently delete your account and all data</p>
+            </div>
+            <button className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
+              Delete Account
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// AI Provider Settings Component
+function AIProviderSettings() {
+  const [provider, setProvider] = useState('openai')
+  const [apiKey, setApiKey] = useState('')
+  const toast = useToast()
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">AI Provider</label>
+        <select
+          value={provider}
+          onChange={(e) => setProvider(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        >
+          <option value="openai">OpenAI (GPT-4)</option>
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="local">Local Model</option>
+        </select>
+        <p className="text-xs text-gray-500 mt-1">Select the AI provider for transaction classification</p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+        <input
+          type="password"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          placeholder="sk-..."
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        />
+        <p className="text-xs text-gray-500 mt-1">Your API key is encrypted and stored securely</p>
+      </div>
+
+      <div className="pt-6 border-t border-gray-100">
+        <h3 className="font-medium text-gray-900 mb-4">Classification Settings</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900">Auto-classify on import</p>
+              <p className="text-sm text-gray-500">Automatically classify transactions when importing</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" defaultChecked className="sr-only peer" />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Confidence Threshold: 70%
+            </label>
             <input
               type="range"
-              min="0"
+              min="50"
               max="100"
               defaultValue="70"
-              className="w-full"
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
             />
-            <p className="text-sm text-gray-600 mt-1">
-              Transactions below this threshold will require review
-            </p>
+            <p className="text-xs text-gray-500 mt-1">Transactions below this threshold will require manual review</p>
           </div>
         </div>
       </div>
 
-      {/* Notifications */}
-      <div className="card">
-        <div className="flex items-center gap-3 mb-4">
-          <Bell className="w-5 h-5 text-gray-600" />
-          <h2 className="text-lg font-semibold">Notifications</h2>
+      <div className="pt-4 border-t border-gray-100">
+        <LoadingButton loading={false} onClick={() => toast.showToast('AI settings saved', 'success')}>
+          Save Settings
+        </LoadingButton>
+      </div>
+    </div>
+  )
+}
+
+// Tax Preferences Settings Component
+function TaxPreferencesSettings() {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Default Tax Year</label>
+          <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            <option>2024</option>
+            <option>2023</option>
+            <option>2022</option>
+          </select>
         </div>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Tax optimization alerts</p>
-              <p className="text-sm text-gray-600">
-                Get notified about potential tax savings
-              </p>
-            </div>
-            <input type="checkbox" className="w-5 h-5" defaultChecked />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Classification review reminders</p>
-              <p className="text-sm text-gray-600">
-                Remind when transactions need review
-              </p>
-            </div>
-            <input type="checkbox" className="w-5 h-5" defaultChecked />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Filing Status</label>
+          <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            <option>Single</option>
+            <option>Married Filing Jointly</option>
+            <option>Married Filing Separately</option>
+            <option>Head of Household</option>
+          </select>
         </div>
       </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">State for Tax Filing</label>
+        <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <option>California</option>
+          <option>New York</option>
+          <option>Texas</option>
+          <option>Florida</option>
+        </select>
+      </div>
+
+      <div className="pt-6 border-t border-gray-100">
+        <h3 className="font-medium text-gray-900 mb-4">Tax Categories</h3>
+        <p className="text-sm text-gray-500 mb-4">Customize tax category mappings for your business</p>
+        <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
+          Manage Categories
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// Notification Settings Component
+function NotificationSettings() {
+  return (
+    <div className="space-y-4">
+      {[
+        { title: 'Tax optimization alerts', desc: 'Get notified about potential tax savings' },
+        { title: 'Classification review reminders', desc: 'Remind when transactions need review' },
+        { title: 'Weekly summary emails', desc: 'Receive a weekly summary of your tax status' },
+        { title: 'Deadline reminders', desc: 'Get reminded about upcoming tax deadlines' },
+        { title: 'New feature announcements', desc: 'Learn about new features and improvements' },
+      ].map((item, i) => (
+        <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div>
+            <p className="font-medium text-gray-900">{item.title}</p>
+            <p className="text-sm text-gray-500">{item.desc}</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" defaultChecked className="sr-only peer" />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+          </label>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Integrations Settings Component
+function IntegrationsSettings() {
+  const integrations = [
+    { name: 'QuickBooks Online', icon: '📊', connected: false },
+    { name: 'Xero', icon: '📈', connected: false },
+    { name: 'Plaid', icon: '🏦', connected: false },
+    { name: 'Stripe', icon: '💳', connected: false },
+  ]
+
+  return (
+    <div className="space-y-4">
+      {integrations.map((int, i) => (
+        <div key={i} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{int.icon}</span>
+            <div>
+              <p className="font-medium text-gray-900">{int.name}</p>
+              <p className="text-sm text-gray-500">
+                {int.connected ? 'Connected' : 'Not connected'}
+              </p>
+            </div>
+          </div>
+          <button className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            int.connected
+              ? 'border border-gray-300 hover:bg-gray-100'
+              : 'bg-indigo-600 text-white hover:bg-indigo-700'
+          }`}>
+            {int.connected ? 'Disconnect' : 'Connect'}
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Billing Settings Component
+function BillingSettings() {
+  return (
+    <div className="space-y-6">
+      <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-medium text-indigo-900">Current Plan: Free</p>
+            <p className="text-sm text-indigo-700">Upgrade to unlock more features</p>
+          </div>
+          <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+            Upgrade Plan
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="font-medium text-gray-900 mb-4">Payment Method</h3>
+        <div className="p-4 border border-dashed border-gray-300 rounded-lg text-center">
+          <p className="text-sm text-gray-500">No payment method added</p>
+          <button className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+            Add Payment Method
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="font-medium text-gray-900 mb-4">Billing History</h3>
+        <p className="text-sm text-gray-500">No billing history available</p>
+      </div>
+    </div>
+  )
+}
+
+// Help Settings Component
+function HelpSettings() {
+  return (
+    <div className="space-y-4">
+      {[
+        { title: 'Documentation', desc: 'Learn how to use AI Tax Engine', icon: FileText },
+        { title: 'Video Tutorials', desc: 'Watch step-by-step guides', icon: Database },
+        { title: 'Contact Support', desc: 'Get help from our team', icon: HelpCircle },
+        { title: 'Report a Bug', desc: 'Let us know about issues', icon: Shield },
+      ].map((item, i) => {
+        const Icon = item.icon
+        return (
+          <button key={i} className="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors text-left">
+            <Icon className="w-6 h-6 text-indigo-600" />
+            <div>
+              <p className="font-medium text-gray-900">{item.title}</p>
+              <p className="text-sm text-gray-500">{item.desc}</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 ml-auto" />
+          </button>
+        )
+      })}
     </div>
   )
 }
