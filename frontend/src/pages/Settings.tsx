@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { 
   User, 
   Shield, 
@@ -11,6 +12,7 @@ import {
   ChevronRight,
   ChevronDown,
   FileText,
+  Home,
 } from 'lucide-react'
 import { useToast } from '../components/ToastProvider'
 import { LoadingButton } from '../components/Loading'
@@ -68,15 +70,20 @@ const settingsSections = [
 
 export default function Settings() {
   const [activeSection, setActiveSection] = useState('profile')
+  const [isBreadcrumbDropdownOpen, setIsBreadcrumbDropdownOpen] = useState(false)
   const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false)
+  const breadcrumbDropdownRef = useRef<HTMLDivElement>(null)
   const mobileDropdownRef = useRef<HTMLDivElement>(null)
   
   // Get user from localStorage
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
+      if (breadcrumbDropdownRef.current && !breadcrumbDropdownRef.current.contains(e.target as Node)) {
+        setIsBreadcrumbDropdownOpen(false)
+      }
       if (mobileDropdownRef.current && !mobileDropdownRef.current.contains(e.target as Node)) {
         setIsMobileDropdownOpen(false)
       }
@@ -112,11 +119,64 @@ export default function Settings() {
 
   const handleSelectSection = (sectionId: string) => {
     setActiveSection(sectionId)
+    setIsBreadcrumbDropdownOpen(false)
     setIsMobileDropdownOpen(false)
   }
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumb Navigation with Dropdown */}
+      <nav className="flex items-center gap-2 text-sm">
+        <Link to="/dashboard" className="flex items-center gap-1 text-gray-500 hover:text-gray-700 transition-colors">
+          <Home className="w-4 h-4" />
+        </Link>
+        <ChevronRight className="w-4 h-4 text-gray-400" />
+        <Link to="/settings" className="text-gray-500 hover:text-gray-700 transition-colors">
+          Settings
+        </Link>
+        <ChevronRight className="w-4 h-4 text-gray-400" />
+        
+        {/* Section Dropdown */}
+        <div className="relative" ref={breadcrumbDropdownRef}>
+          <button
+            onClick={() => setIsBreadcrumbDropdownOpen(!isBreadcrumbDropdownOpen)}
+            className="flex items-center gap-1 font-medium text-gray-900 hover:text-indigo-600 transition-colors"
+          >
+            {activeSectionData && (
+              <>
+                <activeSectionData.icon className="w-4 h-4" />
+                <span>{activeSectionData.label}</span>
+              </>
+            )}
+            <ChevronDown className={`w-4 h-4 transition-transform ${isBreadcrumbDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+          
+          {isBreadcrumbDropdownOpen && (
+            <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+              {settingsSections.map((section) => {
+                const Icon = section.icon
+                const isActive = activeSection === section.id
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => handleSelectSection(section.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${
+                      isActive
+                        ? 'bg-indigo-50 text-indigo-700'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600' : 'text-gray-400'}`} />
+                    <span className="font-medium text-sm">{section.label}</span>
+                    {isActive && <ChevronRight className="w-4 h-4 text-indigo-400 ml-auto" />}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </nav>
+
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
