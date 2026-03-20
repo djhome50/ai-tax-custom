@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { useParams, Link, Outlet, useLocation } from 'react-router-dom'
+import { useParams, Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { 
   Building2, 
   FileText, 
@@ -12,6 +13,7 @@ import {
   Settings,
 } from 'lucide-react'
 import { entityApi, transactionApi } from '../lib/api'
+import { useEntity } from '../contexts/EntityContext'
 
 const TABS = [
   { path: '', label: 'Overview', icon: Building2 },
@@ -23,13 +25,33 @@ const TABS = [
 export default function EntityDetails() {
   const { entityId } = useParams<{ entityId: string }>()
   const location = useLocation()
+  const navigate = useNavigate()
+  const { setCurrentEntity, entities } = useEntity()
   
-  const { data: entityResponse, isLoading } = useQuery({
+  const { data: entityResponse, isLoading, error } = useQuery({
     queryKey: ['entity', entityId],
     queryFn: () => entityApi.get(Number(entityId)),
     enabled: !!entityId,
+    retry: false,
   })
   const entity = entityResponse?.data
+
+  // Handle entity not found
+  useEffect(() => {
+    if (error || (!isLoading && !entity && entityId)) {
+      // Clear stale entity from context
+      setCurrentEntity(null)
+      // Redirect to entities list
+      navigate('/entities', { replace: true })
+    }
+  }, [error, entity, isLoading, entityId, navigate, setCurrentEntity])
+
+  // Update current entity in context when loaded
+  useEffect(() => {
+    if (entity) {
+      setCurrentEntity(entity)
+    }
+  }, [entity, setCurrentEntity])
 
   const { data: summaryResponse } = useQuery({
     queryKey: ['summary', entityId],
