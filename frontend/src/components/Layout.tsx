@@ -266,7 +266,7 @@ export default function Layout({ children }: LayoutProps) {
 
         {/* Page content */}
         <main className="p-6">
-          <Breadcrumbs />
+          {location.pathname !== '/settings' && <Breadcrumbs />}
           {children}
         </main>
       </div>

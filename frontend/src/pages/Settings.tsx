@@ -231,35 +231,6 @@ export default function Settings() {
           )}
         </div>
 
-        {/* Desktop Sidebar Navigation */}
-        <div className="hidden lg:block w-64 flex-shrink-0">
-          <nav className="space-y-1">
-            {settingsSections.map((section) => {
-              const Icon = section.icon
-              const isActive = activeSection === section.id
-              return (
-                <button
-                  key={section.id}
-                  onClick={() => setActiveSection(section.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                    isActive
-                      ? 'bg-indigo-50 text-indigo-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-gray-400'}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-medium text-sm ${isActive ? 'text-indigo-900' : ''}`}>
-                      {section.label}
-                    </p>
-                  </div>
-                  {isActive && <ChevronRight className="w-4 h-4 text-indigo-400" />}
-                </button>
-              )
-            })}
-          </nav>
-        </div>
-
         {/* Content Area */}
         <div className="flex-1 min-w-0">
           {/* Section Header */}
