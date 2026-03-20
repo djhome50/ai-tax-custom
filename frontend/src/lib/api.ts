@@ -30,8 +30,10 @@ api.interceptors.response.use(
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('user')
       localStorage.removeItem('currentEntity')
-      // Redirect to login
-      window.location.href = '/login'
+      // Only redirect if not already on login/register page
+      if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/register')) {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }
