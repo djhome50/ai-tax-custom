@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Plus, Building2, Trash2, ArrowRight, X, FileText } from 'lucide-react'
+import { Plus, Building2, Trash2, ArrowRight, X, FileText, Pencil } from 'lucide-react'
 import { entityApi } from '../lib/api'
 import { useToast } from '../components/ToastProvider'
 import { Loading, LoadingButton } from '../components/Loading'
@@ -23,6 +23,7 @@ const ENTITY_TYPES = [
 
 export default function Entities() {
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     entity_type: 'sole_proprietorship',
@@ -49,6 +50,7 @@ export default function Entities() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entities'] })
       setShowForm(false)
+      setEditingId(null)
       setFormData({
         name: '',
         entity_type: 'sole_proprietorship',
@@ -61,10 +63,35 @@ export default function Entities() {
         state: '',
         zip_code: '',
       })
-      toast.showToast('Entity created successfully', 'success')
+      toast.showToast(editingId ? 'Entity updated successfully' : 'Entity created successfully', 'success')
     },
     onError: (error: any) => {
-      toast.showToast(error.response?.data?.detail || 'Failed to create entity', 'error')
+      toast.showToast(error.response?.data?.detail || 'Failed to save entity', 'error')
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: typeof formData }) => entityApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entities'] })
+      setShowForm(false)
+      setEditingId(null)
+      setFormData({
+        name: '',
+        entity_type: 'sole_proprietorship',
+        ein: '',
+        tax_year: 2024,
+        business_name: '',
+        business_code: '',
+        address: '',
+        city: '',
+        state: '',
+        zip_code: '',
+      })
+      toast.showToast('Entity updated successfully', 'success')
+    },
+    onError: (error: any) => {
+      toast.showToast(error.response?.data?.detail || 'Failed to update entity', 'error')
     },
   })
 
@@ -81,7 +108,45 @@ export default function Entities() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    createMutation.mutate(formData)
+    if (editingId) {
+      updateMutation.mutate({ id: editingId, data: formData })
+    } else {
+      createMutation.mutate(formData)
+    }
+  }
+
+  const handleEdit = (entity: any) => {
+    setEditingId(entity.id)
+    setFormData({
+      name: entity.name,
+      entity_type: entity.entity_type,
+      ein: entity.ein || '',
+      tax_year: entity.tax_year,
+      business_name: entity.business_name || '',
+      business_code: entity.business_code || '',
+      address: entity.address || '',
+      city: entity.city || '',
+      state: entity.state || '',
+      zip_code: entity.zip_code || '',
+    })
+    setShowForm(true)
+  }
+
+  const handleCloseForm = () => {
+    setShowForm(false)
+    setEditingId(null)
+    setFormData({
+      name: '',
+      entity_type: 'sole_proprietorship',
+      ein: '',
+      tax_year: 2024,
+      business_name: '',
+      business_code: '',
+      address: '',
+      city: '',
+      state: '',
+      zip_code: '',
+    })
   }
 
   const selectedType = ENTITY_TYPES.find(t => t.value === formData.entity_type)
@@ -118,11 +183,15 @@ export default function Entities() {
             {/* Modal Header */}
             <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Create New Entity</h2>
-                <p className="text-sm text-gray-500">Add an individual or business entity for tax tracking</p>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {editingId ? 'Edit Entity' : 'Create New Entity'}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {editingId ? 'Update entity details' : 'Add an individual or business entity for tax tracking'}
+                </p>
               </div>
               <button
-                onClick={() => setShowForm(false)}
+                onClick={() => handleCloseForm()}
                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -305,12 +374,12 @@ export default function Entities() {
                 <button
                   type="button"
                   className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium transition-colors"
-                  onClick={() => setShowForm(false)}
+                  onClick={() => handleCloseForm()}
                 >
                   Cancel
                 </button>
-                <LoadingButton loading={createMutation.isPending} disabled={!formData.name}>
-                  Create Entity
+                <LoadingButton loading={createMutation.isPending || updateMutation.isPending} disabled={!formData.name}>
+                  {editingId ? 'Update Entity' : 'Create Entity'}
                 </LoadingButton>
               </div>
             </form>
@@ -361,6 +430,15 @@ export default function Entities() {
                     <p className="text-sm text-gray-900">Tax Year {entity.tax_year}</p>
                     <p className="text-xs text-gray-500">EIN: {entity.ein || 'Not set'}</p>
                   </div>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleEdit(entity)
+                    }}
+                    className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={(e) => {
                       e.preventDefault()
