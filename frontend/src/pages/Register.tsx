@@ -19,9 +19,9 @@ export function Register() {
       const response = await api.post('/auth/register', data);
       return response.data;
     },
-    onSuccess: () => {
-      toast.showToast('Account created! Please log in.', 'success');
-      navigate('/login');
+    onSuccess: (_, variables) => {
+      // Auto-login after registration
+      loginMutation.mutate({ email: variables.email, password: variables.password });
     },
     onError: (err: any) => {
       const message = err.response?.data?.detail || 'Registration failed';
@@ -40,9 +40,11 @@ export function Register() {
       localStorage.setItem('refresh_token', data.refresh_token);
       // Store user info from registration
       localStorage.setItem('user', JSON.stringify({ email: email, full_name: fullName || undefined }));
+      toast.showToast('Account created successfully!', 'success');
       navigate('/');
     },
     onError: () => {
+      toast.showToast('Account created! Please log in.', 'success');
       navigate('/login');
     },
   });
