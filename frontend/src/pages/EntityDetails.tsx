@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams, Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { 
   Building2, 
   FileText, 
@@ -26,7 +26,8 @@ export default function EntityDetails() {
   const { entityId } = useParams<{ entityId: string }>()
   const location = useLocation()
   const navigate = useNavigate()
-  const { setCurrentEntity, entities } = useEntity()
+  const { setCurrentEntity } = useEntity()
+  const hasRedirected = useRef(false)
   
   const { data: entityResponse, isLoading, error } = useQuery({
     queryKey: ['entity', entityId],
@@ -38,7 +39,8 @@ export default function EntityDetails() {
 
   // Handle entity not found
   useEffect(() => {
-    if (error || (!isLoading && !entity && entityId)) {
+    if (!hasRedirected.current && (error || (!isLoading && !entity && entityId))) {
+      hasRedirected.current = true
       // Clear stale entity from context
       setCurrentEntity(null)
       // Redirect to entities list
