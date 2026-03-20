@@ -10,14 +10,35 @@ import {
   Calculator,
   ArrowRight,
   Clock,
+  DollarSign,
+  AlertCircle,
 } from 'lucide-react'
-import { entityApi } from '../lib/api'
+import { entityApi, transactionApi } from '../lib/api'
 
 export default function Dashboard() {
   const { data: entities, isLoading } = useQuery({
     queryKey: ['entities'],
     queryFn: entityApi.list,
   })
+
+  const entityCount = entities?.data?.length || 0
+  const firstEntity = entities?.data?.[0]
+
+  // Fetch summary for first entity if available
+  const { data: summaryResponse } = useQuery({
+    queryKey: ['summary', firstEntity?.id],
+    queryFn: () => transactionApi.summary(firstEntity!.id),
+    enabled: !!firstEntity,
+  })
+  const summary = summaryResponse?.data
+
+  // Fetch recent transactions
+  const { data: transactionsResponse } = useQuery({
+    queryKey: ['transactions', firstEntity?.id],
+    queryFn: () => transactionApi.list(firstEntity!.id, { limit: 5 }),
+    enabled: !!firstEntity,
+  })
+  const recentTransactions = transactionsResponse?.data
 
   if (isLoading) {
     return (
@@ -27,7 +48,18 @@ export default function Dashboard() {
     )
   }
 
-  const entityCount = entities?.data?.length || 0
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount)
+  }
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString()
+  }
+
+  const pendingCount = recentTransactions?.filter(t => t.classification_status === 'pending').length || 0
 
   return (
     <div className="space-y-6">
@@ -60,7 +92,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-indigo-100 rounded-lg">
@@ -80,7 +112,9 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Income</p>
-              <p className="text-2xl font-bold text-gray-900">$0.00</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {summary ? formatCurrency(summary.gross_income) : '$0.00'}
+              </p>
             </div>
           </div>
         </div>
@@ -92,7 +126,23 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Expenses</p>
-              <p className="text-2xl font-bold text-gray-900">$0.00</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {summary ? formatCurrency(summary.total_expenses) : '$0.00'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <DollarSign className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Net Income</p>
+              <p className={`text-2xl font-bold ${summary?.net_income && summary.net_income >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                {summary ? formatCurrency(summary.net_income) : '$0.00'}
+              </p>
             </div>
           </div>
         </div>
@@ -101,7 +151,7 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Link
-          to="/entities"
+          to={firstEntity ? `/entities/${firstEntity.id}/transactions` : '/entities'}
           className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md hover:border-indigo-300 transition-all group"
         >
           <div className="flex items-start justify-between">
@@ -116,7 +166,7 @@ export default function Dashboard() {
         </Link>
 
         <Link
-          to="/entities"
+          to={firstEntity ? `/entities/${firstEntity.id}/forms` : '/entities'}
           className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md hover:border-indigo-300 transition-all group"
         >
           <div className="flex items-start justify-between">
@@ -131,7 +181,7 @@ export default function Dashboard() {
         </Link>
 
         <Link
-          to="/entities"
+          to={firstEntity ? `/entities/${firstEntity.id}/tax` : '/entities'}
           className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md hover:border-indigo-300 transition-all group"
         >
           <div className="flex items-start justify-between">
@@ -205,16 +255,94 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-        </div>
-        <div className="p-6">
-          <div className="flex items-center gap-4 text-gray-500">
-            <Clock className="w-5 h-5" />
-            <p className="text-sm">No recent activity. Start by creating an entity or importing transactions.</p>
+      {/* Recent Transactions & Pending */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Transactions */}
+        <div className="bg-white rounded-xl border border-gray-200">
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Recent Transactions</h2>
+              {firstEntity && (
+                <Link to={`/entities/${firstEntity.id}/transactions`} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+                  View all
+                </Link>
+              )}
+            </div>
           </div>
+          
+          {!recentTransactions || recentTransactions.length === 0 ? (
+            <div className="p-6">
+              <div className="flex items-center gap-4 text-gray-500">
+                <Clock className="w-5 h-5" />
+                <p className="text-sm">No transactions yet. Import your first file to get started.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {recentTransactions.slice(0, 5).map((txn) => (
+                <div key={txn.id} className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${txn.direction === 'income' ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+                      {txn.direction === 'income' ? (
+                        <TrendingUp className="w-4 h-4 text-emerald-600" />
+                      ) : (
+                        <TrendingDown className="w-4 h-4 text-amber-600" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 text-sm">
+                        {txn.raw_description || 'Transaction'}
+                      </p>
+                      <p className="text-xs text-gray-500">{formatDate(txn.transaction_date)}</p>
+                    </div>
+                  </div>
+                  <p className={`font-semibold ${txn.direction === 'income' ? 'text-emerald-600' : 'text-gray-900'}`}>
+                    {txn.direction === 'income' ? '+' : '-'}{formatCurrency(txn.amount)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Pending Classifications */}
+        <div className="bg-white rounded-xl border border-gray-200">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900">Classification Status</h2>
+          </div>
+          
+          {pendingCount > 0 ? (
+            <div className="p-6">
+              <div className="flex items-center gap-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <AlertCircle className="w-6 h-6 text-amber-600" />
+                <div>
+                  <p className="font-medium text-amber-900">{pendingCount} transactions need classification</p>
+                  <p className="text-sm text-amber-700">AI will categorize them automatically</p>
+                </div>
+              </div>
+              {firstEntity && (
+                <Link
+                  to={`/entities/${firstEntity.id}/transactions`}
+                  className="mt-4 inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                  Review transactions
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="p-6">
+              <div className="flex items-center gap-4 text-gray-500">
+                <Clock className="w-5 h-5" />
+                <p className="text-sm">
+                  {summary?.transaction_count 
+                    ? `All ${summary.transaction_count} transactions classified`
+                    : 'No transactions to classify'
+                  }
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
