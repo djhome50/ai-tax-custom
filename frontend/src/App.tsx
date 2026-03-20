@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Entities from './pages/Entities'
+import EntityDetails from './pages/EntityDetails'
 import Transactions from './pages/Transactions'
 import TaxForms from './pages/TaxForms'
 import Settings from './pages/Settings'
@@ -35,8 +36,11 @@ function App() {
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/entities" element={<Entities />} />
-              <Route path="/entities/:entityId/transactions" element={<Transactions />} />
-              <Route path="/entities/:entityId/forms" element={<TaxForms />} />
+              <Route path="/entities/:entityId" element={<EntityDetails />}>
+                <Route path="transactions" element={<Transactions />} />
+                <Route path="forms" element={<TaxForms />} />
+                <Route path="settings" element={<Settings />} />
+              </Route>
               <Route path="/settings" element={<Settings />} />
             </Route>
           </Route>

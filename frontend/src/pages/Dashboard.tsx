@@ -231,7 +231,7 @@ export default function Dashboard() {
             {entities?.data?.slice(0, 5).map((entity) => (
               <Link
                 key={entity.id}
-                to={`/entities/${entity.id}/transactions`}
+                to={`/entities/${entity.id}`}
                 className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors group"
               >
                 <div className="flex items-center gap-4">
