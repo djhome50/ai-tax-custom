@@ -63,7 +63,8 @@ export default function Layout({ children }: LayoutProps) {
     localStorage.removeItem('token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user')
-    navigate('/login')
+    localStorage.removeItem('currentEntity')
+    window.location.href = '/login'
   }
 
   return (

@@ -25,8 +25,13 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized
+      // Handle unauthorized - clear all auth data
       localStorage.removeItem('token')
+      localStorage.removeItem('refresh_token')
+      localStorage.removeItem('user')
+      localStorage.removeItem('currentEntity')
+      // Redirect to login
+      window.location.href = '/login'
     }
     return Promise.reject(error)
   }
